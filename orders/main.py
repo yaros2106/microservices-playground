@@ -10,6 +10,10 @@ class OrderCreate(BaseModel):
     quantity: int
 
 
+class OrderRead(OrderCreate):
+    id: int
+
+
 orders = []
 
 
@@ -18,7 +22,7 @@ async def health_check():
     return {"service": "orders", "status": "ok"}
 
 
-@app.post("/orders")
+@app.post("/orders", response_model=OrderRead, status_code=201)
 async def create_order(order: OrderCreate):
     new_id = len(orders) + 1
     new_order = {"id": new_id, **order.model_dump()}
@@ -26,9 +30,14 @@ async def create_order(order: OrderCreate):
     return new_order
 
 
-@app.get("/orders/{order_id}")
+@app.get("/orders/{order_id}", response_model=OrderRead)
 async def get_order(order_id: int):
     for order in orders:
         if order["id"] == order_id:
             return order
     raise HTTPException(status_code=404, detail=f"order with id {order_id} not found")
+
+
+@app.get("/orders", response_model=list[OrderRead])
+async def get_all_orders():
+    return orders
