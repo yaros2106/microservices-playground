@@ -1,6 +1,8 @@
-def main():
-    print("Hello from orders!")
+from fastapi import FastAPI
+
+app = FastAPI()
 
 
-if __name__ == "__main__":
-    main()
+@app.get("/healthcheck")
+async def health_check():
+    return {"service": "orders", "status": "ok"}
