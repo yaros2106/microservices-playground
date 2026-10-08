@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 
 app = FastAPI()
@@ -38,6 +38,12 @@ async def get_order(order_id: int):
     raise HTTPException(status_code=404, detail=f"order with id {order_id} not found")
 
 
+def pagination(limit: int = 10, offset: int = 0):
+    return {"limit": limit, "offset": offset}
+
+
 @app.get("/orders", response_model=list[OrderRead])
-async def get_all_orders():
-    return orders
+async def get_all_orders(params: dict = Depends(pagination)):
+    limit = params["limit"]
+    offset = params["offset"]
+    return orders[offset:limit + offset]
