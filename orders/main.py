@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
@@ -20,9 +21,6 @@ class OrderRead(OrderCreate):
     id: int
 
 
-orders = []
-
-
 @app.get("/healthcheck")
 async def health_check():
     return {"service": "orders", "status": "ok"}
@@ -37,11 +35,11 @@ async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
 
 
 @app.get("/orders/{order_id}", response_model=OrderRead)
-async def get_order(order_id: int):
-    for order in orders:
-        if order["id"] == order_id:
-            return order
-    raise HTTPException(status_code=404, detail=f"order with id {order_id} not found")
+async def get_order(order_id: int, db: AsyncSession = Depends(get_db)):
+    order = await db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail=f"order with id {order_id} not found")
+    return order
 
 
 def pagination(limit: int = 10, offset: int = 0):
@@ -49,7 +47,13 @@ def pagination(limit: int = 10, offset: int = 0):
 
 
 @app.get("/orders", response_model=list[OrderRead])
-async def get_all_orders(params: dict = Depends(pagination)):
+async def get_all_orders(
+    params: dict = Depends(pagination),
+    db: AsyncSession = Depends(get_db)
+):
     limit = params["limit"]
     offset = params["offset"]
-    return orders[offset:limit + offset]
+    stmt = select(Order).order_by(Order.id).offset(offset).limit(limit)
+    result = await db.execute(stmt)
+    orders = result.scalars().all()
+    return orders
