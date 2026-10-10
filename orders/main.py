@@ -1,16 +1,22 @@
 from fastapi import FastAPI, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from database import get_db
+from models import Order
 
 app = FastAPI()
 
 
 class OrderCreate(BaseModel):
     user_id: int
-    item: str
+    item: str = Field(max_length=255)
     quantity: int
 
 
 class OrderRead(OrderCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
 
 
@@ -23,10 +29,10 @@ async def health_check():
 
 
 @app.post("/orders", response_model=OrderRead, status_code=201)
-async def create_order(order: OrderCreate):
-    new_id = len(orders) + 1
-    new_order = {"id": new_id, **order.model_dump()}
-    orders.append(new_order)
+async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
+    new_order = Order(**order.model_dump())
+    db.add(new_order)
+    await db.commit()
     return new_order
 
 
