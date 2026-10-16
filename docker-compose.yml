@@ -25,5 +25,32 @@ services:
       orders-db:
         condition: service_healthy
 
+  users-db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: users
+      POSTGRES_PASSWORD: users
+      POSTGRES_DB: users
+    ports:
+      - "5402:5432"
+    volumes:
+      - users-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U users -d users"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  users:
+    build: ./users
+    ports:
+      - "8102:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://users:users@users-db:5432/users
+    depends_on:
+      users-db:
+        condition: service_healthy
+
 volumes:
   orders-db-data:
+  users-db-data:
