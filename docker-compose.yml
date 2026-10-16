@@ -1,0 +1,29 @@
+services:
+  orders-db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: orders
+      POSTGRES_DB: orders
+    ports:
+      - "5401:5432"
+    volumes:
+      - orders-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orders -d orders"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  orders:
+    build: ./orders
+    ports:
+      - "8101:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://orders:orders@orders-db:5432/orders
+    depends_on:
+      orders-db:
+        condition: service_healthy
+
+volumes:
+  orders-db-data:
