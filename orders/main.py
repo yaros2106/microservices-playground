@@ -22,8 +22,13 @@ class OrderRead(OrderCreate):
 
 
 @app.get("/healthcheck")
-async def health_check():
+async def health_check(db: AsyncSession = Depends(get_db)):
+    try:
+        await db.execute(select(1))
+    except Exception:
+        raise HTTPException(status_code=503, detail="database unavailable")
     return {"service": "orders", "status": "ok"}
+
 
 
 @app.post("/orders", response_model=OrderRead, status_code=201)
