@@ -17,6 +17,9 @@ services:
 
   orders:
     build: ./orders
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./orders:/app
     ports:
       - "8101:8000"
     environment:
@@ -43,6 +46,9 @@ services:
 
   users:
     build: ./users
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./users:/app
     ports:
       - "8102:8000"
     environment:
