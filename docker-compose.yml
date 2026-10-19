@@ -24,6 +24,7 @@ services:
       - "8101:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://orders:orders@orders-db:5432/orders
+      USERS_URL: http://users:8000
     depends_on:
       orders-db:
         condition: service_healthy
