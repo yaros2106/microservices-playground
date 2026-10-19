@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException
+import httpx
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import settings
 from database import get_db
 from models import Order
 
@@ -33,6 +35,12 @@ async def health_check(db: AsyncSession = Depends(get_db)):
 
 @app.post("/orders", response_model=OrderRead, status_code=201)
 async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"{settings.users_url}/users/{order.user_id}")
+    if response.status_code == 404:
+        raise HTTPException(status_code=422, detail=f"user {order.user_id} not found")
+    if response.status_code != 200:
+        raise HTTPException(status_code=503, detail="users service unavailable")
     new_order = Order(**order.model_dump())
     db.add(new_order)
     await db.commit()
