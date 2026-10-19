@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 
     database_url: str
     users_url: str
+    users_timeout: float = 2.0
 
 
 settings = Settings()

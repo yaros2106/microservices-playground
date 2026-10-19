@@ -35,8 +35,12 @@ async def health_check(db: AsyncSession = Depends(get_db)):
 
 @app.post("/orders", response_model=OrderRead, status_code=201)
 async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"{settings.users_url}/users/{order.user_id}")
+    try:
+        async with httpx.AsyncClient(timeout=settings.users_timeout) as client:
+            response = await client.get(f"{settings.users_url}/users/{order.user_id}")
+    except httpx.RequestError:
+        raise HTTPException(status_code=503, detail="users service unavailable")
+
     if response.status_code == 404:
         raise HTTPException(status_code=422, detail=f"user {order.user_id} not found")
     if response.status_code != 200:
@@ -45,6 +49,7 @@ async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
     db.add(new_order)
     await db.commit()
     return new_order
+
 
 
 @app.get("/orders/{order_id}", response_model=OrderRead)
