@@ -58,6 +58,16 @@ services:
       users-db:
         condition: service_healthy
 
+  gateway:
+    image: krakend:2
+    volumes:
+      - ./gateway:/etc/krakend
+    ports:
+      - "8100:8080"
+    depends_on:
+      - orders
+      - users
+
 volumes:
   orders-db-data:
   users-db-data:

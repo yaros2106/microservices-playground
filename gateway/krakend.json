@@ -1,0 +1,67 @@
+{
+  "version": 3,
+  "port": 8080,
+  "endpoints": [
+    {
+      "endpoint": "/users",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "host": ["http://users:8000"],
+          "url_pattern": "/users",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/users/{id}",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "host": ["http://users:8000"],
+          "url_pattern": "/users/{id}",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/orders",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "host": ["http://orders:8000"],
+          "url_pattern": "/orders",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/orders",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "input_query_strings": ["limit", "offset"],
+      "backend": [
+        {
+          "host": ["http://orders:8000"],
+          "url_pattern": "/orders",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/orders/{id}",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "host": ["http://orders:8000"],
+          "url_pattern": "/orders/{id}",
+          "encoding": "no-op"
+        }
+      ]
+    }
+  ]
+}
