@@ -1,14 +1,19 @@
+import asyncio
+import logging
+
 from fastapi import FastAPI, Depends, HTTPException
-import httpx
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+import httpx
 
 from config import settings
 from database import get_db
 from models import Order
 
+
 app = FastAPI()
+logger = logging.getLogger("uvicorn.error")
 
 
 class OrderCreate(BaseModel):
@@ -32,12 +37,27 @@ async def health_check(db: AsyncSession = Depends(get_db)):
     return {"service": "orders", "status": "ok"}
 
 
+async def fetch_user(user_id: int) -> httpx.Response:
+    attempts = settings.users_retries + 1
+
+    async with httpx.AsyncClient(timeout=settings.users_timeout) as client:
+        for attempt in range(1, attempts + 1):
+            try:
+                response = await client.get(f"{settings.users_url}/users/{user_id}")
+            except httpx.RequestError:
+                if attempt == attempts:
+                    raise
+            else:
+                if response.status_code < 500 or attempt == attempts:
+                    return response
+            logger.warning("users call failed, attempt %s of %s", attempt, attempts)
+            await asyncio.sleep(0.2)
+
 
 @app.post("/orders", response_model=OrderRead, status_code=201)
 async def create_order(order: OrderCreate, db: AsyncSession = Depends(get_db)):
     try:
-        async with httpx.AsyncClient(timeout=settings.users_timeout) as client:
-            response = await client.get(f"{settings.users_url}/users/{order.user_id}")
+        response = await fetch_user(order.user_id)
     except httpx.RequestError:
         raise HTTPException(status_code=503, detail="users service unavailable")
 
