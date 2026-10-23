@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException
+from pwdlib import PasswordHash
+from pydantic import BaseModel, ConfigDict, Field
+
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel, ConfigDict, Field
 
 from database import get_db
 from models import User
@@ -11,12 +13,19 @@ from models import User
 app = FastAPI()
 
 
-class UserCreate(BaseModel):
+password_hasher = PasswordHash.recommended()
+
+
+class UserBase(BaseModel):
     email: str = Field(max_length=255)
     name: str = Field(max_length=255)
 
 
-class UserRead(UserCreate):
+class UserCreate(UserBase):
+    password: str = Field(min_length=8, max_length=128)
+
+
+class UserRead(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -33,7 +42,8 @@ async def health_check(db: AsyncSession = Depends(get_db)):
 
 @app.post("/users", response_model=UserRead, status_code=201)
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
-    new_user = User(**user.model_dump())
+    password_hash = password_hasher.hash(user.password)
+    new_user = User(**user.model_dump(exclude={"password"}), password_hash=password_hash)
     db.add(new_user)
     try:
         await db.commit()
