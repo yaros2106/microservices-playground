@@ -1,11 +1,15 @@
-from fastapi import FastAPI, Depends, HTTPException
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import jwt
+from fastapi import Depends, FastAPI, HTTPException
 from pwdlib import PasswordHash
 from pydantic import BaseModel, ConfigDict, Field
-
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import settings
 from database import get_db
 from models import User
 
@@ -14,6 +18,7 @@ app = FastAPI()
 
 
 password_hasher = PasswordHash.recommended()
+private_key = Path(settings.jwt_private_key_path).read_text()
 
 
 class UserBase(BaseModel):
@@ -29,6 +34,16 @@ class UserRead(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
 
 
 @app.get("/healthcheck")
@@ -60,3 +75,16 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"user with id {user_id} not found")
     return user
 
+
+@app.post("/login", response_model=TokenResponse)
+async def login(creds: LoginRequest, db: AsyncSession = Depends(get_db)):
+    stmt = select(User).where(User.email == creds.email)
+    user = (await db.execute(stmt)).scalar_one_or_none()
+    if user is None or not password_hasher.verify(creds.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="invalid email or password")
+    payload = {
+        "sub": str(user.id),
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes),
+    }
+    token = jwt.encode(payload, private_key, algorithm="RS256", headers={"kid": "users-1"})
+    return TokenResponse(access_token=token)
