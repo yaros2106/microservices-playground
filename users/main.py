@@ -2,6 +2,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import jwt
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
+from jwt.algorithms import RSAAlgorithm
 from fastapi import Depends, FastAPI, HTTPException
 from pwdlib import PasswordHash
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,9 +18,19 @@ from models import User
 
 app = FastAPI()
 
+JWT_KID = "users-1"
+
 
 password_hasher = PasswordHash.recommended()
 private_key = Path(settings.jwt_private_key_path).read_text()
+public_key = load_pem_public_key(Path(settings.jwt_public_key_path).read_bytes())
+public_jwk = RSAAlgorithm.to_jwk(public_key, as_dict=True)
+
+public_jwk.update({
+    "kid": JWT_KID,
+    "alg": "RS256",
+    "use": "sig",
+})
 
 
 class UserBase(BaseModel):
@@ -86,5 +98,10 @@ async def login(creds: LoginRequest, db: AsyncSession = Depends(get_db)):
         "sub": str(user.id),
         "exp": datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes),
     }
-    token = jwt.encode(payload, private_key, algorithm="RS256", headers={"kid": "users-1"})
+    token = jwt.encode(payload, private_key, algorithm="RS256", headers={"kid": JWT_KID})
     return TokenResponse(access_token=token)
+
+
+@app.get("/.well-known/jwks.json")
+async def jwks():
+    return {"keys": [public_jwk]}
