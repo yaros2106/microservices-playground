@@ -8,7 +8,9 @@
       "output_encoding": "no-op",
       "backend": [
         {
-          "host": ["http://users:8000"],
+          "host": [
+            "http://users:8000"
+          ],
           "url_pattern": "/users",
           "encoding": "no-op"
         }
@@ -20,7 +22,9 @@
       "output_encoding": "no-op",
       "backend": [
         {
-          "host": ["http://users:8000"],
+          "host": [
+            "http://users:8000"
+          ],
           "url_pattern": "/users/{id}",
           "encoding": "no-op"
         }
@@ -32,30 +36,64 @@
       "output_encoding": "no-op",
       "backend": [
         {
-          "host": ["http://orders:8000"],
+          "host": [
+            "http://orders:8000"
+          ],
           "url_pattern": "/orders",
           "encoding": "no-op"
         }
-      ]
+      ],
+      "input_headers": [
+        "X-User-Id",
+        "Content-Type"
+      ],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "jwk_url": "http://users:8000/.well-known/jwks.json",
+          "propagate_claims": [
+            [
+              "sub",
+              "X-User-Id"
+            ]
+          ],
+          "disable_jwk_security": true,
+          "cache": true
+        }
+      }
     },
     {
       "endpoint": "/orders",
       "method": "GET",
+      "input_headers": [
+        "X-User-Id"
+      ],
       "output_encoding": "no-op",
-      "input_query_strings": ["limit", "offset"],
+      "input_query_strings": [
+        "limit",
+        "offset"
+      ],
       "backend": [
         {
-          "host": ["http://orders:8000"],
+          "host": [
+            "http://orders:8000"
+          ],
           "url_pattern": "/orders",
           "encoding": "no-op"
         }
       ],
       "extra_config": {
-          "auth/validator": {
-            "alg": "RS256",
-            "jwk_url": "http://users:8000/.well-known/jwks.json",
-            "disable_jwk_security": true,
-            "cache": true
+        "auth/validator": {
+          "alg": "RS256",
+          "jwk_url": "http://users:8000/.well-known/jwks.json",
+          "propagate_claims": [
+            [
+              "sub",
+              "X-User-Id"
+            ]
+          ],
+          "disable_jwk_security": true,
+          "cache": true
         }
       }
     },
@@ -65,11 +103,30 @@
       "output_encoding": "no-op",
       "backend": [
         {
-          "host": ["http://orders:8000"],
+          "host": [
+            "http://orders:8000"
+          ],
           "url_pattern": "/orders/{id}",
           "encoding": "no-op"
         }
-      ]
+      ],
+      "input_headers": [
+        "X-User-Id"
+      ],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "jwk_url": "http://users:8000/.well-known/jwks.json",
+          "propagate_claims": [
+            [
+              "sub",
+              "X-User-Id"
+            ]
+          ],
+          "disable_jwk_security": true,
+          "cache": true
+        }
+      }
     },
     {
       "endpoint": "/login",
@@ -77,7 +134,9 @@
       "output_encoding": "no-op",
       "backend": [
         {
-          "host": ["http://users:8000"],
+          "host": [
+            "http://users:8000"
+          ],
           "url_pattern": "/login",
           "encoding": "no-op"
         }
