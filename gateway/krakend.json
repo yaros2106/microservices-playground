@@ -140,7 +140,15 @@
           "url_pattern": "/login",
           "encoding": "no-op"
         }
-      ]
+      ],
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "client_max_rate": 3,
+          "client_capacity": 3,
+          "every": "1m",
+          "strategy": "ip"
+        }
+      }
     },
     {
       "endpoint": "/me",
