@@ -26,7 +26,16 @@
             "http://users:8000"
           ],
           "url_pattern": "/users/{id}",
-          "encoding": "no-op"
+          "encoding": "no-op",
+          "extra_config": {
+            "qos/circuit-breaker": {
+              "name": "users",
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 3,
+              "log_status_change": true
+            }
+          }
         }
       ]
     },
