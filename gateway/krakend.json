@@ -141,6 +141,46 @@
           "encoding": "no-op"
         }
       ]
+    },
+    {
+      "endpoint": "/me",
+      "method": "GET",
+      "input_headers": [
+        "X-User-Id"
+      ],
+      "backend": [
+        {
+          "host": [
+            "http://users:8000"
+          ],
+          "url_pattern": "/users/{JWT.sub}",
+          "group": "user"
+        },
+        {
+          "host": [
+            "http://orders:8000"
+          ],
+          "url_pattern": "/orders",
+          "is_collection": true,
+          "mapping": {
+            "collection": "orders"
+          }
+        }
+      ],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "jwk_url": "http://users:8000/.well-known/jwks.json",
+          "propagate_claims": [
+            [
+              "sub",
+              "X-User-Id"
+            ]
+          ],
+          "disable_jwk_security": true,
+          "cache": true
+        }
+      }
     }
   ]
 }
