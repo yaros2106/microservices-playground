@@ -6,6 +6,8 @@
 |---|---|---|
 | orders | http://localhost:8101/docs | orders-db (5401) |
 | users  | http://localhost:8102/docs | users-db (5402) |
+| gateway (вход для клиентов) | http://localhost:8100 | — |
+| rabbitmq | http://localhost:15672 (microshop / microshop) | — |
 
 ## Запуск
 
