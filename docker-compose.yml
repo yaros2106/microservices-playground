@@ -25,8 +25,11 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://orders:orders@orders-db:5432/orders
       USERS_URL: http://users:8000
+      RABBITMQ_URL: amqp://microshop:microshop@rabbitmq:5672/
     depends_on:
       orders-db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   users-db:

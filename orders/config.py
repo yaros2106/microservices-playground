@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     users_url: str
     users_timeout: float = 2.0
     users_retries: int = 2
+    rabbitmq_url: str = "amqp://microshop:microshop@localhost:5672/"
 
 
 settings = Settings()

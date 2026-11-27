@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends, HTTPException, Header
 from pydantic import BaseModel, ConfigDict, Field
@@ -7,12 +8,20 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import httpx
 
+from broker import broker
 from config import settings
 from database import get_db
 from models import Order
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await broker.connect()
+    yield
+    await broker.close()
+
+
+app = FastAPI(lifespan=lifespan)
 logger = logging.getLogger("uvicorn.error")
 
 
@@ -75,6 +84,12 @@ async def create_order(
     new_order = Order(**order.model_dump(), user_id=user_id)
     db.add(new_order)
     await db.commit()
+    try:
+        await broker.publish(
+            "order.created", {"order_id": new_order.id, "user_id": user_id}
+        )
+    except Exception:
+        logger.exception("failed to publish order.created for order %s", new_order.id)
     return new_order
 
 
